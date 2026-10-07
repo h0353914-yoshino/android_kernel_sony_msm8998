@@ -580,7 +580,7 @@ config MEMORY_STATE_TIME
 	  Memory time statistics exported to /sys/kernel/memory_state_time
 
 config NFC_PN553_DEVICES
-	bool "Nxp pn553 NCI protocol driver (I2C) devices"
+	tristate "Nxp pn553 NCI protocol driver (I2C) devices"
 	default y
 	---help---
 	  You'll have to say Y if your computer contains an I2C device that
