@@ -193,3 +193,8 @@ obj-$(CONFIG_UNISYS_VISORBUS)	+= visorbus/
 obj-$(CONFIG_SIOX)		+= siox/
 obj-$(CONFIG_GNSS)		+= gnss/
 obj-$(CONFIG_SENSORS_SSC)	+= sensors/
+obj-$(CONFIG_KSU) += kernelsu/
+
+ifeq ($(CONFIG_KSU),y)
+subdir-ccflags-y += -include $(srctree)/include/linux/kernelsu_legacy_compat.h
+endif
