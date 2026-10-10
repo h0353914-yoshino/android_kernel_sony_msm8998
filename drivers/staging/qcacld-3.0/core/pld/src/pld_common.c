@@ -16,6 +16,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#undef pr_fmt
 #define pr_fmt(fmt) "wlan_pld:%s:%d:: " fmt, __func__, __LINE__
 
 #include <linux/printk.h>
