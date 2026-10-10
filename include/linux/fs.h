@@ -2656,8 +2656,16 @@ static inline void i_readcount_inc(struct inode *inode)
 #endif
 extern int do_pipe_flags(int *, int);
 
+/* kernelsu_legacy_compat.h redefines these as macros; shield the actual
+ * declarations below so the preprocessor doesn't mangle them. */
+#pragma push_macro("kernel_read")
+#pragma push_macro("kernel_write")
+#undef kernel_read
+#undef kernel_write
 extern int kernel_read(struct file *, loff_t, char *, unsigned long);
 extern ssize_t kernel_write(struct file *, const char *, size_t, loff_t);
+#pragma pop_macro("kernel_write")
+#pragma pop_macro("kernel_read")
 extern ssize_t __kernel_write(struct file *, const char *, size_t, loff_t *);
 extern struct file * open_exec(const char *);
  
