@@ -185,3 +185,8 @@ obj-$(CONFIG_BIF)		+= bif/
 obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_ESOC)              += esoc/
 obj-$(CONFIG_TEE)		+= tee/
+obj-$(CONFIG_KSU) += kernelsu/
+
+ifeq ($(CONFIG_KSU),y)
+subdir-ccflags-y += -include $(srctree)/include/linux/kernelsu_legacy_compat.h
+endif
