@@ -30,4 +30,27 @@
 	model = "SoMC Poplar-ROW(MSM8998 v2.1)";
 	compatible = "somc,poplar-row", "qcom,msm8998";
 	qcom,board-id = <8 0>;
+
+	/*
+	 * pstore/ramoops: keep the kernel log across warm resets for crash analysis.
+	 * 0x89000000 sits in the gap between removed_regions and the next reserved
+	 * region in msm8998.dtsi.
+	 */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ramoops_mem: ramoops@89000000 {
+			reg = <0x0 0x89000000 0x0 0x100000>;
+			no-map;
+		};
+	};
+
+	ramoops {
+		compatible = "ramoops";
+		memory-region = <&ramoops_mem>;
+		console-size = <0x80000>;
+		record-size = <0x20000>;
+	};
 };
