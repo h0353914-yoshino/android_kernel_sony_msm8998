@@ -39,8 +39,8 @@
 			sony,nfc_wake= <&tlmm 93 0>;
 
 			pinctrl-names = "felica_active","felica_suspend";
-			pinctrl-0 = <&msm_gpio_92_felica>;
-			pinctrl-1 = <&msm_gpio_92_felica>;
+			pinctrl-0 = <&msm_gpio_92_felica &nfc_clk_req_felica>;
+			pinctrl-1 = <&msm_gpio_92_felica &nfc_clk_req_felica>;
 
 			/* Defined in Clock Distribution */
 			clocks = <&clock_rpmcc RPM_SMD_LN_BB_CLK3_PIN>;
@@ -66,6 +66,21 @@
 			drive-strength = <2>;
 			bias-disable;
 			input-enable;
+		};
+	};
+};
+
+/*
+ * GPIO_21 NFC_CLK_REQ on PM8998. The 4.4 qpnp driver applied the gpio@d400
+ * node's qcom,vin-sel at boot; pinctrl-spmi-gpio only takes the VIN select
+ * from a pinconf state, so the FeliCa node requests it.
+ */
+&pm8998_gpios {
+	nfc_clk_req_felica: nfc_clk_req_felica {
+		pinconf {
+			pins = "gpio21";
+			power-source = <1>;	/* 1.8V */
+			bias-pull-down;
 		};
 	};
 };
