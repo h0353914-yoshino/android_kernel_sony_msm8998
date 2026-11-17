@@ -1,0 +1,79 @@
+diff --git a/arch/arm64/boot/dts/vendor/qcom/msm8998-yoshino-common.dtsi b/arch/arm64/boot/dts/vendor/qcom/msm8998-yoshino-common.dtsi
+index c0ae437d1cef..07a0bdf9e8dd 100644
+--- a/arch/arm64/boot/dts/vendor/qcom/msm8998-yoshino-common.dtsi
++++ b/arch/arm64/boot/dts/vendor/qcom/msm8998-yoshino-common.dtsi
+@@ -23,10 +23,15 @@
+ 	};
+ 
+ 	reserved-memory {
+-		pstore_reserve_mem: pstore_reserve_mem_region_region@ffc00000 {
+-			compatible = "removed-dma-pool";
++		ramoops_mem: ramoops@ffc00000 {
++			compatible = "ramoops";
+ 			no-map;
+ 			reg = <0 0xffc00000 0 0x00100000>;
++			record-size = <0x1000>;
++			console-size = <0x40000>;
++			ftrace-size = <0x0>;
++			pmsg-size = <0x0>;
++			ecc-size = <0x0>;
+ 		};
+ 	};
+ };
+@@ -604,16 +609,6 @@
+ 		};
+ 	};
+ 
+-	ramoops {
+-		compatible = "ramoops";
+-		memory-region = <&pstore_reserve_mem>;
+-		record-size = <0x0 0x1000>;
+-		console-size = <0x0 0x40000>;
+-		ftrace-size = <0x0 0x0>;
+-		pmsg-size = <0x0 0x0>;
+-		ecc-size = <0x0 0x0>;
+-	};
+-
+ 	gpio_keys {
+ 		vol_dn {
+ 			label = "volume_down";
+diff --git a/arch/arm64/configs/sony/yoshino.config b/arch/arm64/configs/sony/yoshino.config
+index 433d6ae1b494..cd626e3dd7b9 100644
+--- a/arch/arm64/configs/sony/yoshino.config
++++ b/arch/arm64/configs/sony/yoshino.config
+@@ -65,6 +65,7 @@ CONFIG_NLS_UTF8=y
+ CONFIG_PINCTRL_SOMC=y
+ CONFIG_POWERKEY_FORCECRASH=y
+ # CONFIG_PRINT_QUOTA_WARNING is not set
++CONFIG_PSTORE=y
+ CONFIG_QCA_CLD_WLAN=y
+ CONFIG_QCOM_DCC=y
+ CONFIG_QCOM_RTB=y
+@@ -75,6 +76,7 @@ CONFIG_RAS=y
+ CONFIG_RCU_BOOST=y
+ CONFIG_RCU_KTHREAD_PRIO=1
+ CONFIG_SCSI_UFS_RESTRICT_TX_LANES=y
++CONFIG_SERIAL_MSM=y
+ CONFIG_SOMC_CHARGER_EXTENSION=y
+ CONFIG_SOMC_LCD_OCP_ENABLED=y
+ CONFIG_SONY_CAM_V4L2=y
+@@ -142,6 +144,9 @@ CONFIG_MEMCG_SWAP=y
+ CONFIG_MEMCG_SWAP_ENABLED=y
+ CONFIG_PAGE_COUNTER=y
+ # CONFIG_PANTHERLORD_FF is not set
++CONFIG_PSTORE_CONSOLE=y
++# CONFIG_PSTORE_PMSG is not set
++CONFIG_PSTORE_RAM=y
+ CONFIG_QCOM_RTB_SEPARATE_CPUS=y
+ CONFIG_RCU_BOOST_DELAY=500
+ CONFIG_REED_SOLOMON_ENC8=y
+@@ -151,6 +156,9 @@ CONFIG_REED_SOLOMON_ENC8=y
+ # CONFIG_SCHED_HMP is not set
+ # CONFIG_SCHED_HMP_CSTATE_AWARE is not set
+ # CONFIG_SCHED_CORE_CTL is not set
++CONFIG_SERIAL_CORE_CONSOLE=y
++CONFIG_SERIAL_EARLYCON=y
++CONFIG_SERIAL_MSM_CONSOLE=y
+ # CONFIG_SMS_USB_DRV is not set
+ CONFIG_SONY_FF=y
+ # CONFIG_TOUCHSCREEN_SUR40 is not set
