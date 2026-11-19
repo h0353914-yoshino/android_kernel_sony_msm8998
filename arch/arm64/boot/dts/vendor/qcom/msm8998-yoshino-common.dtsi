@@ -3710,3 +3710,27 @@
 		qcom,cdc-dmic-sample-rate = <2400000>;
 	};
 };
+
+/* Yoshino uses the WCD9335 (tasha) codec only. The tavil (WCD934x) codec,
+ * its DSP manager, the WDSP glink channel and the CDC DMA DAIs have no
+ * users; on maple's 4.4 kernel only the glink driver binds, and nothing
+ * opens its device node. */
+&wcd934x_cdc {
+	status = "disabled";
+};
+
+&snd_934x {
+	status = "disabled";
+};
+
+&msm8998_wdsp_mgr {
+	status = "disabled";
+};
+
+&msm8998_wdsp_glink {
+	status = "disabled";
+};
+
+&msm_dai_cdc_dma {
+	status = "disabled";
+};
