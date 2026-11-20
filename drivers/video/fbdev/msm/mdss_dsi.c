@@ -31,6 +31,7 @@
 #include "mdss_livedisplay.h"
 #ifdef CONFIG_FB_MSM_MDSS_SPECIFIC_PANEL
 #include "mdss_dsi_panel_driver.h"
+#include "mdss_dsi_panel_debugfs.h"
 #endif /* CONFIG_FB_MSM_MDSS_SPECIFIC_PANEL */
 
 #define CMDLINE_DSI_CTL_NUM_STRING_LEN 2
