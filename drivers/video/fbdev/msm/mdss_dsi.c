@@ -3677,6 +3677,22 @@ static int mdss_dsi_ctrl_probe(struct platform_device *pdev)
 		goto error_pan_node;
 	}
 
+#ifdef CONFIG_FB_MSM_MDSS_SPECIFIC_PANEL
+	/*
+	 * Create the panel sysfs node only after all panel setup has
+	 * succeeded, so a deferred probe does not leave a stale
+	 * "mdss_dsi_panel" device behind for the retry to collide with.
+	 */
+	if (!index) {
+		rc = mdss_dsi_panel_create_fs(ctrl_pdata);
+		if (rc) {
+			pr_err("%s: mdss_dsi_panel_create_fs rc = %d\n",
+					__func__, rc);
+			goto error_pan_node;
+		}
+	}
+#endif /* CONFIG_FB_MSM_MDSS_SPECIFIC_PANEL */
+
 	pinfo = &(ctrl_pdata->panel_data.panel_info);
 	if (!(mdss_dsi_is_hw_config_split(ctrl_pdata->shared_data) &&
 		mdss_dsi_is_ctrl_clk_slave(ctrl_pdata)) &&

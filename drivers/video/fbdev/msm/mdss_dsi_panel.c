@@ -3200,13 +3200,6 @@ int mdss_dsi_panel_init(struct device_node *node,
 		return rc;
 	}
 
-	if (!index) {
-		rc = mdss_dsi_panel_create_fs(ctrl_pdata);
-		if (rc) {
-			pr_err("%s: mdss_dsi_panel_create_fs rc = %d\n", __func__, rc);
-			return rc;
-		}
-	}
 #endif /* CONFIG_FB_MSM_MDSS_SPECIFIC_PANEL */
 
 	pr_debug("%s:%d\n", __func__, __LINE__);

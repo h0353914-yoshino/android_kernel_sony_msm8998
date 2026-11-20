@@ -1023,8 +1023,13 @@ error:
 
 int mdss_dsi_panel_create_fs(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
+	static bool fs_registered;
 	int rc = 0;
 	char *path_name = "mdss_dsi_panel";
+
+	/* Already registered by an earlier probe pass; do not re-register. */
+	if (fs_registered)
+		return 0;
 
 	dev_set_name(&virtdev, "%s", path_name);
 	rc = device_register(&virtdev);
@@ -1041,6 +1046,7 @@ int mdss_dsi_panel_create_fs(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 	}
 
 	dev_set_drvdata(&virtdev, ctrl_pdata);
+	fs_registered = true;
 
 err:
 	return rc;
