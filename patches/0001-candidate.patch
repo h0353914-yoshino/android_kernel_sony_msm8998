@@ -1,0 +1,46 @@
+diff --git a/drivers/staging/qcacld-3.0/components/ipa/core/src/wlan_ipa_core.c b/drivers/staging/qcacld-3.0/components/ipa/core/src/wlan_ipa_core.c
+index fb4930399c41..a92882df921d 100644
+--- a/drivers/staging/qcacld-3.0/components/ipa/core/src/wlan_ipa_core.c
++++ b/drivers/staging/qcacld-3.0/components/ipa/core/src/wlan_ipa_core.c
+@@ -718,10 +718,12 @@ static inline void wlan_ipa_wdi_get_wdi_version(struct wlan_ipa_priv *ipa_ctx)
+ {
+ }
+ 
+-static inline int wlan_ipa_wdi_is_smmu_enabled(struct wlan_ipa_priv *ipa_ctx,
++static inline bool wlan_ipa_wdi_is_smmu_enabled(struct wlan_ipa_priv *ipa_ctx,
+ 					       qdf_device_t osdev)
+ {
+-	return qdf_mem_smmu_s1_enabled(osdev);
++	return ipa_ctx->is_smmu_enabled &&
++		(ipa_ctx->is_smmu_identity ||
++		 qdf_mem_smmu_s1_enabled(osdev));
+ }
+ 
+ static inline QDF_STATUS wlan_ipa_wdi_setup(struct wlan_ipa_priv *ipa_ctx,
+@@ -736,6 +738,16 @@ static inline QDF_STATUS wlan_ipa_wdi_setup(struct wlan_ipa_priv *ipa_ctx,
+ 			     &ipa_ctx->rx_pipe_handle);
+ }
+ 
++static inline bool wlan_ipa_smmu_identity_query(void)
++{
++	struct ipa_smmu_in_params in = {
++		.smmu_client = IPA_SMMU_WLAN_CLIENT,
++	};
++	struct ipa_smmu_out_params out = {0};
++
++	return !ipa_get_smmu_params(&in, &out) && out.identity_map;
++}
++
+ static inline QDF_STATUS wlan_ipa_wdi_init(struct wlan_ipa_priv *ipa_ctx)
+ {
+ 	struct ipa_wdi_uc_ready_params uc_ready_param;
+@@ -751,6 +763,9 @@ static inline QDF_STATUS wlan_ipa_wdi_init(struct wlan_ipa_priv *ipa_ctx)
+ 	if (true == uc_ready_param.is_uC_ready) {
+ 		ipa_info("UC Ready");
+ 		ipa_ctx->uc_loaded = true;
++		ipa_ctx->is_smmu_enabled = qdf_get_ipa_smmu_enabled();
++		ipa_ctx->is_smmu_identity = ipa_ctx->is_smmu_enabled &&
++			wlan_ipa_smmu_identity_query();
+ 	} else {
+ 		return QDF_STATUS_E_BUSY;
+ 	}
