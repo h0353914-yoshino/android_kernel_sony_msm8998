@@ -1,0 +1,197 @@
+From 9d9334208549946c9d4ecd1b99c1d83fc65c7bc8 Mon Sep 17 00:00:00 2001
+From: h <h0353914@gmail.com>
+Date: Sun, 11 Oct 2026 02:20:24 +0800
+Subject: [PATCH 2/3] ksu: add KernelSU manual hook call sites
+
+Change-Id: I3edf688ca18a216327ae973e3eea3473dee6a11a
+---
+ arch/arm64/configs/sony/yoshino.config |  1 +
+ fs/exec.c                              | 12 ++++++++++++
+ fs/open.c                              | 10 ++++++++++
+ fs/read_write.c                        | 10 ++++++++++
+ fs/stat.c                              | 11 +++++++++++
+ include/linux/seccomp.h                |  2 ++
+ kernel/reboot.c                        |  9 +++++++++
+ 7 files changed, 55 insertions(+)
+
+diff --git a/arch/arm64/configs/sony/yoshino.config b/arch/arm64/configs/sony/yoshino.config
+index f8553e1144cb..eb6b2a984e09 100644
+--- a/arch/arm64/configs/sony/yoshino.config
++++ b/arch/arm64/configs/sony/yoshino.config
+@@ -131,6 +131,7 @@ CONFIG_JOYSTICK_XPAD=y
+ # CONFIG_JOYSTICK_XPAD_FF is not set
+ # CONFIG_JOYSTICK_XPAD_LEDS is not set
+ # CONFIG_JOYSTICK_ZHENHUA is not set
++# CONFIG_KPROBES is not set
+ # CONFIG_LOGIG940_FF is not set
+ # CONFIG_LOGIRUMBLEPAD2_FF is not set
+ # CONFIG_LOGITECH_FF is not set
+diff --git a/fs/exec.c b/fs/exec.c
+index 341b872d758f..7f5ac9206634 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1674,12 +1674,21 @@ out_ret:
+ 	return retval;
+ }
+ 
++#ifdef CONFIG_KSU
++__attribute__((hot))
++extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
++				void *argv, void *envp, int *flags);
++#endif
++
+ int do_execve(struct filename *filename,
+ 	const char __user *const __user *__argv,
+ 	const char __user *const __user *__envp)
+ {
+ 	struct user_arg_ptr argv = { .ptr.native = __argv };
+ 	struct user_arg_ptr envp = { .ptr.native = __envp };
++#ifdef CONFIG_KSU
++	ksu_handle_execveat((int *)AT_FDCWD, &filename, &argv, &envp, 0);
++#endif
+ 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
+ }
+ 
+@@ -1723,6 +1732,9 @@ static int compat_do_execveat(int fd, struct filename *filename,
+ 		.is_compat = true,
+ 		.ptr.compat = __envp,
+ 	};
++#ifdef CONFIG_KSU // 32-bit ksud and 32-on-64 support
++	ksu_handle_execveat((int *)AT_FDCWD, &filename, &argv, &envp, 0);
++#endif
+ 	return do_execveat_common(fd, filename, argv, envp, flags);
+ }
+ #endif
+diff --git a/fs/open.c b/fs/open.c
+index c39c1d1fa082..5fbfaa6f6b43 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -338,6 +338,12 @@ SYSCALL_DEFINE4(fallocate, int, fd, int, mode, loff_t, offset, loff_t, len)
+ 	return error;
+ }
+ 
++#ifdef CONFIG_KSU
++__attribute__((hot))
++extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
++				int *mode, int *flags);
++#endif
++
+ /*
+  * access() needs to use the real uid/gid, not the effective uid/gid.
+  * We do this by temporarily clearing all FS-related capabilities and
+@@ -353,6 +359,10 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ 	int res;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+ 
++#ifdef CONFIG_KSU
++	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
++#endif
++
+ 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+ 		return -EINVAL;
+ 
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 27023e8f531e..5cfc77c1e1dd 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -559,11 +559,21 @@ static inline void file_pos_write(struct file *file, loff_t pos)
+ 		file->f_pos = pos;
+ }
+ 
++#ifdef CONFIG_KSU
++extern bool ksu_vfs_read_hook __read_mostly;
++extern __attribute__((cold)) void ksu_handle_sys_read(unsigned int fd);
++#endif
++
+ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
+ {
+ 	struct fd f = fdget_pos(fd);
+ 	ssize_t ret = -EBADF;
+ 
++#ifdef CONFIG_KSU
++	if (unlikely(ksu_vfs_read_hook))
++		ksu_handle_sys_read(fd);
++#endif
++
+ 	if (f.file) {
+ 		loff_t pos = file_pos_read(f.file);
+ 		ret = vfs_read(f.file, buf, count, &pos);
+diff --git a/fs/stat.c b/fs/stat.c
+index 004dd77c3b93..aa95c81839b5 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -287,6 +287,13 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
+ 	return cp_new_stat(&stat, statbuf);
+ }
+ 
++#ifdef CONFIG_KSU
++__attribute__((hot))
++extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
++				int *flags);
++#endif
++
++
+ #if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)
+ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+ 		struct stat __user *, statbuf, int, flag)
+@@ -294,6 +301,10 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+ 	struct kstat stat;
+ 	int error;
+ 
++#ifdef CONFIG_KSU
++	ksu_handle_stat(&dfd, &filename, &flag);
++#endif
++
+ 	error = vfs_fstatat(dfd, filename, &stat, flag);
+ 	if (error)
+ 		return error;
+diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
+index 50c460a956f1..0fe699246ea9 100644
+--- a/include/linux/seccomp.h
++++ b/include/linux/seccomp.h
+@@ -9,6 +9,7 @@
+ #ifdef CONFIG_SECCOMP
+ 
+ #include <linux/thread_info.h>
++#include <linux/atomic.h>
+ #include <asm/seccomp.h>
+ 
+ struct seccomp_filter;
+@@ -25,6 +26,7 @@ struct seccomp_filter;
+  */
+ struct seccomp {
+ 	int mode;
++	atomic_t filter_count;
+ 	struct seccomp_filter *filter;
+ };
+ 
+diff --git a/kernel/reboot.c b/kernel/reboot.c
+index 2946ed1d99d4..ae3d6186ad76 100644
+--- a/kernel/reboot.c
++++ b/kernel/reboot.c
+@@ -277,6 +277,11 @@ static DEFINE_MUTEX(reboot_mutex);
+  *
+  * reboot doesn't sync: do that yourself before calling this.
+  */
++
++#ifdef CONFIG_KSU
++extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg);
++#endif
++
+ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+ 		void __user *, arg)
+ {
+@@ -284,6 +289,10 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+ 	char buffer[256];
+ 	int ret = 0;
+ 
++#ifdef CONFIG_KSU
++	ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
++#endif
++
+ 	/* We only trust the superuser with rebooting the system. */
+ 	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
+ 		return -EPERM;
+-- 
+2.43.0
+
