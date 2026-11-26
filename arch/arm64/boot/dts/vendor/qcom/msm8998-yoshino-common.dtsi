@@ -615,6 +615,7 @@
 	};
 
 	gpio_keys {
+		label = "gpio-keys";
 		vol_dn {
 			label = "volume_down";
 			gpios = <&pm8998_gpios 5 0x1>;
