@@ -3511,6 +3511,18 @@
 	status = "disabled";
 };
 
+&mdss_dp_pll {
+	status = "disabled";
+};
+
+&mdss_hdmi_tx {
+	status = "disabled";
+};
+
+&mdss_hdmi_pll {
+	status = "disabled";
+};
+
 &sdhc_2 {
 	/* hc_mem must cover SDCC_DEBUG_IIB_REG (0x980) used by sdhci_msm_dump_iib() */
 	reg = <0xc0a4900 0x9a0>, <0xc0a4000 0x800>;
