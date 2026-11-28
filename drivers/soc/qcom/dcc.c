@@ -1248,7 +1248,7 @@ static int dcc_probe(struct platform_device *pdev)
 	if (!drvdata->ram_base)
 		return -ENOMEM;
 
-	drvdata->clk = devm_clk_get(dev, "apb_pclk");
+	drvdata->clk = devm_clk_get(dev, "dcc_clk");
 	if (IS_ERR(drvdata->clk)) {
 		ret = PTR_ERR(drvdata->clk);
 		goto err;
